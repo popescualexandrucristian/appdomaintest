@@ -1,34 +1,14 @@
 #include <cstdint>
 #include <stdlib.h>
 
-ref class ServerContext sealed : public AppDomainTest::Context
+public ref class ServerContext
 {
-	System::String^ owner;
-	System::String^ data;
-
 public:
-	ServerContext(System::String^ owner) :
-		owner(owner) {}
-
-	virtual property System::String^ Owner { 
-		System::String^ get();
-	}
-
-	virtual void SetData(System::String^ newData)
-	{
-		data = newData;
-	}
-	virtual System::String^ GetData()
-	{
-		return data;
-	}
+	System::String^ OwnerInfo;
+	System::String^ Data;
 };
 
-System::String^ ServerContext::Owner::get()
-{
-	return owner;
-}
-
+//[System::LoaderOptimization(System::LoaderOptimization::MultiDomain)]
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -74,8 +54,9 @@ int main(int argc, char** argv)
 			if (byteStream.Key == "file_data")
 			{
 				System::String^ fileData = aSCIIEncoding->GetString(byteStream.Value);
-				context = gcnew ServerContext(connection->RemoteEndPoint->ToString());
-				context->SetData(fileData);
+				context = gcnew ServerContext();
+				context->OwnerInfo = connection->RemoteEndPoint->ToString();
+				context->Data = fileData;
 			}
 			else
 				untrustedPlugins[byteStream.Key] = byteStream.Value;
@@ -83,12 +64,9 @@ int main(int argc, char** argv)
 
 		AppDomainTest::Sandbox^ sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
 
-		System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
-		sandbox->ExecuteUntrustedCode(context);
-		System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
-
-		sandbox->Destroy();
-
+		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
+		context->Data = sandbox->ExecuteUntrustedCode();
+		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
 	}
 
 	return EXIT_SUCCESS;
