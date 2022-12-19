@@ -2,7 +2,7 @@ namespace AppDomainTest
 {
     public interface class Context
     {
-        property System::String^ FileName;
+        property System::String^ Owner { System::String^ get(); };
 
         void SetData(System::String^ newData);
         System::String^ GetData();

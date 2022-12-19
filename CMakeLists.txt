@@ -9,14 +9,7 @@ SET(CMAKE_CSharp_FLAGS "/platform:x64")
 
 SET(CMAKE_CXX_STANDARD 17)
 
-# Define runtime intermediate build directory, so that debugging the Visual Studio solution works as expected.
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Bin/")
-
-# Set export directory for CMake config.
-SET(CMAKE_INSTALL_BINARY_DIR    "bin/")
-SET(CMAKE_INSTALL_LIBRARY_DIR   "bin/")
-SET(CMAKE_INSTALL_INCLUDE_DIR   "include/")
-SET(CMAKE_INSTALL_EXPORT_DIR    "cmake/")
 
 ADD_SUBDIRECTORY(Interface)
 ADD_SUBDIRECTORY(Client)

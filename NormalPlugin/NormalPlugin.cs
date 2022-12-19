@@ -10,7 +10,7 @@ namespace Example
         {
             string data = context.GetData();
             context.SetData(data.ToUpper());
-            Console.WriteLine($"Executed normal plugin with {context.FileName}");
+            Console.WriteLine($"Executed normal plugin with {context.Owner}");
         }
     }
 }
