@@ -48,6 +48,7 @@ int main(int argc, char** argv)
 	array<unsigned char>^ receivedData = gcnew array<unsigned char>(4096 * 1024);
 	System::Runtime::Serialization::Formatters::Binary::BinaryFormatter^ binaryFormatter = gcnew System::Runtime::Serialization::Formatters::Binary::BinaryFormatter();
 	System::Text::ASCIIEncoding^ aSCIIEncoding = gcnew System::Text::ASCIIEncoding();
+	
 	while (true)
 	{
 		System::Net::Sockets::Socket^ connection = listener->Accept();
@@ -64,8 +65,10 @@ int main(int argc, char** argv)
 
 		ServerContext^ context;
 
-		System::Collections::Generic::Dictionary<System::String^, System::Reflection::Assembly^>^ untrustedPlugins =
-			gcnew System::Collections::Generic::Dictionary<System::String^, System::Reflection::Assembly^>();
+		System::Collections::Generic::Dictionary<System::String^, array<unsigned char>^>^ untrustedPlugins =
+			gcnew System::Collections::Generic::Dictionary<System::String^, array<unsigned char>^>();
+
+
 		for each (auto byteStream in data)
 		{
 			if (byteStream.Key == "file_data")
@@ -75,27 +78,18 @@ int main(int argc, char** argv)
 				context->SetData(fileData);
 			}
 			else
-				untrustedPlugins[byteStream.Key] = System::Reflection::Assembly::Load(byteStream.Value);
+				untrustedPlugins[byteStream.Key] = byteStream.Value;
 		}
-		for each (auto plugin in untrustedPlugins)
-		{
-			System::Console::Write("Started execution of "); System::Console::Write(plugin.Key); System::Console::Write(" on "); System::Console::WriteLine(context->Owner);
-			array<System::Type^>^ types = plugin.Value->GetTypes();
-			for each (auto type in types)
-			{
-				System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
-				bool isAssignableFrom = pluginInterfaceType->IsAssignableFrom(type);
-				if (isAssignableFrom)
-				{
-					AppDomainTest::IPlugin^ plugin = safe_cast<AppDomainTest::IPlugin^>(System::Activator::CreateInstance(type));
-					plugin->Execute(context);
-				}
-			}
-			System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
-			System::Console::Write("Ended execution of "); System::Console::Write(plugin.Key); System::Console::Write(" on "); System::Console::WriteLine(context->Owner);
-		}
-	}
 
+		AppDomainTest::Sandbox^ sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
+
+		System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
+		sandbox->ExecuteUntrustedCode(context);
+		System::Console::Write("Data state : "); System::Console::WriteLine(context->GetData());
+
+		sandbox->Destroy();
+
+	}
 
 	return EXIT_SUCCESS;
 }
