@@ -1,38 +1,31 @@
-PROJECT(Interface VERSION 1.0.0.0 LANGUAGES CXX)
+# Setup project.
+PROJECT(Interface VERSION 1.0.0.0 LANGUAGES CSharp)
+
+# Setup project to use C# utilities.
+INCLUDE(CSharpUtilities)
 
 # Create assembly info with current version.
-CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/Template/AssemblyInfo.cpp.template" "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cpp")
-
-SET(CppCliLib_HEADERS
-    "Interface.h"
-)
-
-SET(CppCliLib_SOURCES
-    "Interface.cpp"
-)
-
-# Optional: Create source groups for better code organization.
-SOURCE_GROUP(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${CppCliLib_SOURCES} ${CppCliLib_SOURCES})
+CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/Template/AssemblyInfo.cs.template" "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cs")
 
 # Add shared library project.
 ADD_LIBRARY(${PROJECT_NAME} SHARED
-    "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cpp"
-    ${CppCliLib_HEADERS}
-    ${CppCliLib_SOURCES}
+    "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cs"
+    "Interface.cs"
 )
 
-# Set target link options (allows to step into and set breakpoints for mixed-mode C++ assemblies).
-# This will not be enabled for Release or MinSizeRel builds.
-TARGET_LINK_OPTIONS(${PROJECT_NAME} 
-    PUBLIC $<$<OR:$<CONFIG:>,$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:/DEBUG /ASSEMBLYDEBUG>
+# Set designer and XAML properties.
+CSHARP_SET_DESIGNER_CS_PROPERTIES(
+    "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cs"
 )
-target_link_options(${PROJECT_NAME} PRIVATE /INCREMENTAL:NO)
-
-# Define the assembly to be mixed-mode (managed + unmanaged).
-SET_PROPERTY(TARGET ${PROJECT_NAME} PROPERTY COMMON_LANGUAGE_RUNTIME "")
 
 # Set CLR assembly properties.
 SET_TARGET_PROPERTIES(${PROJECT_NAME} PROPERTIES
     VS_DOTNET_REFERENCES "System;System.Core"
     VS_GLOBAL_ROOTNAMESPACE ${PROJECT_NAME}
+)
+
+set_target_properties( ${PROJECT_NAME}
+    PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Plugins
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Plugins
 )

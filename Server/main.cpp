@@ -1,14 +1,13 @@
 #include <cstdint>
 #include <stdlib.h>
 
-public ref class ServerContext
+public ref class ServerContext : public AppDomainTest::IContext, public System::MarshalByRefObject
 {
 public:
-	System::String^ OwnerInfo;
-	System::String^ Data;
+	virtual property System::String^ Owner;
+	virtual property System::String^ Data;
 };
 
-//[System::LoaderOptimization(System::LoaderOptimization::MultiDomain)]
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -55,7 +54,7 @@ int main(int argc, char** argv)
 			{
 				System::String^ fileData = aSCIIEncoding->GetString(byteStream.Value);
 				context = gcnew ServerContext();
-				context->OwnerInfo = connection->RemoteEndPoint->ToString();
+				context->Owner = connection->RemoteEndPoint->ToString();
 				context->Data = fileData;
 			}
 			else
@@ -65,7 +64,7 @@ int main(int argc, char** argv)
 		AppDomainTest::Sandbox^ sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
 
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
-		context->Data = sandbox->ExecuteUntrustedCode();
+		sandbox->ExecuteUntrustedCode(context);
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
 	}
 

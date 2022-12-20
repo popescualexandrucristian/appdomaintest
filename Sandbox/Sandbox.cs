@@ -30,12 +30,7 @@ namespace AppDomainTest
             return sandbox;
         }
 
-        public string ExecuteUntrustedCode()
-        {
-            return ExecuteUntrustedCode("123", "abcd");
-        }
-
-        public string ExecuteUntrustedCode(string owner, string data)
+        public void ExecuteUntrustedCode(IContext context)
         {
             try
             {
@@ -46,7 +41,6 @@ namespace AppDomainTest
                         LoadedPlugins[kv.Key] = Assembly.Load(kv.Value);
                 }
 
-                string processedData = data;
                 foreach (var kv in LoadedPlugins)
                 {
                     Type[] types = kv.Value.GetTypes();
@@ -54,18 +48,14 @@ namespace AppDomainTest
                         if (typeof(IPlugin).IsAssignableFrom(t))
                         {
                             IPlugin plugin = (IPlugin)Activator.CreateInstance(t);
-                            processedData = plugin.Execute(owner, processedData);
+                            plugin.Execute(context);
                         }
                 }
-
-                return processedData;
             }
             catch(Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-
-            return "";
         }
 
         public void Dispose()

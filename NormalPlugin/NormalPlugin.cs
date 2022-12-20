@@ -6,11 +6,11 @@ namespace Example
 {
     public class NormalPlugin : AppDomainTest.IPlugin
     {
-        public string Execute(string owner, string data)
+        public void Execute(IContext context)
         {
-            string newData = data.ToUpper();
-            Console.WriteLine($"Executed normal plugin with {owner}");
-            return newData;
+            string newData = context.Data.ToUpper();
+            context.Data = newData;
+            Console.WriteLine($"Executed normal plugin with {context.Owner}");
         }
     }
 }
