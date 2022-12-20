@@ -61,11 +61,13 @@ int main(int argc, char** argv)
 				untrustedPlugins[byteStream.Key] = byteStream.Value;
 		}
 
-		AppDomainTest::Sandbox^ sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
+		auto sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
 
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
-		sandbox->ExecuteUntrustedCode(context);
+		sandbox.Key->ExecuteUntrustedCode(context);
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
+
+		System::AppDomain::Unload(sandbox.Value);
 	}
 
 	return EXIT_SUCCESS;
