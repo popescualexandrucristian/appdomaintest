@@ -5,6 +5,8 @@ namespace AppDomainTest
     {
         string Owner { get; }
         string Data { get; set; }
+
+        void Call(ref string info);
     }
 
     public interface IPlugin

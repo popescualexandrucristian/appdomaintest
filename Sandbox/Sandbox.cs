@@ -6,6 +6,13 @@ using System.Security.Permissions;
 
 namespace AppDomainTest
 {
+    public struct SandboxData
+    {
+        public Sandbox Sandbox;
+        public AppDomain AppDomain;
+        public Sponsor Sponsor;
+    }
+
     public class Sandbox : MarshalByRefObject
     {
         private void LoadPlugins(Dictionary<string, byte[]> pluginData)
@@ -25,7 +32,7 @@ namespace AppDomainTest
             }
         }
 
-        public static KeyValuePair<Sandbox, AppDomain> Create(Dictionary<string, byte[]> pluginData)
+        public static SandboxData Create(Dictionary<string, byte[]> pluginData)
         {
             AppDomain restrictedAppDomain = CrateRestrtictedAppDomain();
 
@@ -33,7 +40,12 @@ namespace AppDomainTest
                 typeof(Sandbox).Assembly.FullName, typeof(Sandbox).FullName);
 
             sandbox.LoadPlugins(pluginData);
-            return new KeyValuePair<Sandbox, AppDomain>(sandbox, restrictedAppDomain);
+            return new SandboxData
+            {
+                Sandbox = sandbox,
+                AppDomain = restrictedAppDomain,
+                Sponsor = new Sponsor(sandbox)
+            };
         }
 
         public void ExecuteUntrustedCode(IContext context)
@@ -72,9 +84,7 @@ namespace AppDomainTest
         {
             PermissionSet permissionSet = new PermissionSet(PermissionState.None);
             permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-            //permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Infrastructure));
-            //permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));
-            //permissionSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read | FileIOPermissionAccess.PathDiscovery, AppDomain.CurrentDomain.BaseDirectory));
+            permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));
 
             AppDomainSetup appDomainSetup = new AppDomainSetup
             {

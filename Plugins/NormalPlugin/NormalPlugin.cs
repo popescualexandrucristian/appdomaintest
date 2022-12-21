@@ -10,6 +10,9 @@ namespace Example
         {
             string newData = context.Data.ToUpper();
             context.Data = newData;
+            string info = "normal plugin";
+            context.Call(ref info);
+            context.Call(ref info);
             Console.WriteLine($"Executed normal plugin with {context.Owner}");
         }
     }

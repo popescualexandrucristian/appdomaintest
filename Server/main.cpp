@@ -1,11 +1,20 @@
 #include <cstdint>
 #include <stdlib.h>
+#include <stdio.h>
 
 public ref class ServerContext : public AppDomainTest::IContext, public System::MarshalByRefObject
 {
 public:
 	virtual property System::String^ Owner;
 	virtual property System::String^ Data;
+
+	virtual void Call(System::String^% info)
+	{
+		System::IntPtr ptrToNativeString = System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(info);
+		const char* str = static_cast<const char*>(ptrToNativeString.ToPointer());
+		printf("A call from the plugin \"%s\"(%p, %p) was made to the c++/CLI land from a sandboxed plugin.\n", str, str, info);
+		info = info->ToUpper();
+	}
 };
 
 int main(int argc, char** argv)
@@ -61,13 +70,17 @@ int main(int argc, char** argv)
 				untrustedPlugins[byteStream.Key] = byteStream.Value;
 		}
 
-		auto sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
+		//in real life we would create this once when the plug-ins are loaded and operate on it until the end of time.
+		AppDomainTest::SandboxData sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
 
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
-		sandbox.Key->ExecuteUntrustedCode(context);
+		sandbox.Sandbox->ExecuteUntrustedCode(context);
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
 
-		System::AppDomain::Unload(sandbox.Value);
+		//we would add create and destroy+unload under an interface.
+		sandbox.Sponsor->Destroy();
+		//we don't want the unload of the sandbox to be in the responsibility of the sandbox as such permissions might allow plug-ins to do things outside of it's app domain.
+		System::AppDomain::Unload(sandbox.AppDomain);
 	}
 
 	return EXIT_SUCCESS;
