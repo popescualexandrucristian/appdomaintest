@@ -5,7 +5,8 @@ using System.Security.Permissions;
 namespace AppDomainTest
 {
     [Serializable]
-    public class Sponsor : MarshalByRefObject, ISponsor
+    [SecurityPermission(SecurityAction.Demand, Infrastructure = true)]
+    public class Sponsor : ISponsor, IDisposable
     {
         private MarshalByRefObject TargetObject = null;
         private bool Disposed = false;
