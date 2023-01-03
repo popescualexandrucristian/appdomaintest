@@ -11,7 +11,6 @@ CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/Template/AssemblyInfo.cs.template" "${CMAKE_
 ADD_LIBRARY(${PROJECT_NAME} SHARED
     "${CMAKE_BINARY_DIR}/Config/${PROJECT_NAME}/AssemblyInfo.cs"
     "Sandbox.cs"
-	"Sponsor.cs"
 )
 
 # Set designer and XAML properties.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.Remoting.Lifetime;
 using System.Security;
 using System.Security.Permissions;
 
@@ -10,7 +11,7 @@ namespace AppDomainTest
     {
         public Sandbox Sandbox;
         public AppDomain AppDomain;
-        public Sponsor Sponsor;
+        public ClientSponsor Sponsor;
     }
 
     public class Sandbox : MarshalByRefObject
@@ -32,21 +33,24 @@ namespace AppDomainTest
             }
         }
 
-        public static SandboxData Create(Dictionary<string, byte[]> pluginData)
-        {
-            AppDomain restrictedAppDomain = CrateRestrtictedAppDomain();
+      public static SandboxData Create(Dictionary<string, byte[]> pluginData)
+      {
+         AppDomain restrictedAppDomain = CrateRestrtictedAppDomain();
 
-            Sandbox sandbox = (Sandbox)restrictedAppDomain.CreateInstanceAndUnwrap(
-                typeof(Sandbox).Assembly.FullName, typeof(Sandbox).FullName);
+         Sandbox sandbox = (Sandbox)restrictedAppDomain.CreateInstanceAndUnwrap(
+             typeof(Sandbox).Assembly.FullName, typeof(Sandbox).FullName);
 
-            sandbox.LoadPlugins(pluginData);
-            return new SandboxData
-            {
-                Sandbox = sandbox,
-                AppDomain = restrictedAppDomain,
-                Sponsor = new Sponsor(sandbox)
-            };
-        }
+         ClientSponsor clientSponsor = new ClientSponsor();
+         clientSponsor.Register(sandbox);
+
+         sandbox.LoadPlugins(pluginData);
+         return new SandboxData
+         {
+            Sandbox = sandbox,
+            AppDomain = restrictedAppDomain,
+            Sponsor = clientSponsor,
+         };
+      }
 
         public void ExecuteUntrustedCode(IContext context)
         {
@@ -85,6 +89,7 @@ namespace AppDomainTest
             PermissionSet permissionSet = new PermissionSet(PermissionState.None);
             permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
             permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));
+            permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Infrastructure));
 
             AppDomainSetup appDomainSetup = new AppDomainSetup
             {

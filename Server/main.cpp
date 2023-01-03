@@ -78,7 +78,7 @@ int main(int argc, char** argv)
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
 
 		//we would add create and destroy+unload under an interface.
-		sandbox.Sponsor->Destroy();
+		sandbox.Sponsor->Unregister(sandbox.Sandbox);
 		//we don't want the unload of the sandbox to be in the responsibility of the sandbox as such permissions might allow plug-ins to do things outside of it's app domain.
 		System::AppDomain::Unload(sandbox.AppDomain);
 	}
