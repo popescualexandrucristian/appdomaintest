@@ -17,6 +17,22 @@ public:
 	}
 };
 
+ref class TaskData
+{
+public:
+	TaskData(ServerContext^ context, AppDomainTest::SandboxData^ sandboxData) :
+		context(context), sandboxData(sandboxData)
+	{
+	}
+	void ExecuteUntrustedCode()
+	{
+		sandboxData->Sandbox->ExecuteUntrustedCode(context);
+	}
+private:
+	ServerContext^ context;
+	AppDomainTest::SandboxData^ sandboxData;
+};
+
 int main(int argc, char** argv)
 {
 	if (argc != 2)
@@ -74,7 +90,15 @@ int main(int argc, char** argv)
 		AppDomainTest::SandboxData sandbox = AppDomainTest::Sandbox::Create(untrustedPlugins);
 
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
-		sandbox.Sandbox->ExecuteUntrustedCode(context);
+
+		TaskData^ taskData = gcnew TaskData(context, sandbox);
+		auto action = gcnew System::Action(taskData, &TaskData::ExecuteUntrustedCode);
+		auto cancelationToken = gcnew System::Threading::CancellationTokenSource();
+		auto task = System::Threading::Tasks::Task::Run(action, cancelationToken->Token);
+		task->Wait(3000);
+		if (!task->CompletedTask)
+			cancelationToken->Cancel(true);
+
 		System::Console::Write("Data state : "); System::Console::WriteLine(context->Data);
 
 		//we would add create and destroy+unload under an interface.

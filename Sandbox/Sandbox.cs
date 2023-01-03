@@ -7,31 +7,31 @@ using System.Security.Permissions;
 
 namespace AppDomainTest
 {
-    public struct SandboxData
-    {
-        public Sandbox Sandbox;
-        public AppDomain AppDomain;
-        public ClientSponsor Sponsor;
-    }
+   public struct SandboxData
+   {
+      public Sandbox Sandbox;
+      public AppDomain AppDomain;
+      public ClientSponsor Sponsor;
+   }
 
-    public class Sandbox : MarshalByRefObject
-    {
-        private void LoadPlugins(Dictionary<string, byte[]> pluginData)
-        {
-            try
+   public class Sandbox : MarshalByRefObject
+   {
+      private void LoadPlugins(Dictionary<string, byte[]> pluginData)
+      {
+         try
+         {
+            if (LoadedPlugins == null)
             {
-                if (LoadedPlugins == null)
-                {
-                    LoadedPlugins = new Dictionary<string, Assembly>();
-                    foreach (var kv in pluginData)
-                        LoadedPlugins[kv.Key] = Assembly.Load(kv.Value);
-                }
+               LoadedPlugins = new Dictionary<string, Assembly>();
+               foreach (var kv in pluginData)
+                  LoadedPlugins[kv.Key] = Assembly.Load(kv.Value);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
+         }
+         catch (Exception ex)
+         {
+            Console.WriteLine(ex.ToString());
+         }
+      }
 
       public static SandboxData Create(Dictionary<string, byte[]> pluginData)
       {
@@ -52,51 +52,51 @@ namespace AppDomainTest
          };
       }
 
-        public void ExecuteUntrustedCode(IContext context)
-        {
+      public void ExecuteUntrustedCode(IContext context)
+      {
 
-            try
+         try
+         {
+            foreach (var kv in LoadedPlugins)
             {
-                foreach (var kv in LoadedPlugins)
-                {
-                    Type[] types = kv.Value.GetTypes();
-                    foreach (Type t in types)
-                        if (typeof(IPlugin).IsAssignableFrom(t))
-                        {
-                            try
-                            {
-                                IPlugin plugin = (IPlugin)Activator.CreateInstance(t);
-                                plugin.Execute(context);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Oh no {kv.Key} from {context.Owner} is bad !!");
-                                Console.WriteLine(ex.ToString());
-                            }
-                        }
-                }
+               Type[] types = kv.Value.GetTypes();
+               foreach (Type t in types)
+                  if (typeof(IPlugin).IsAssignableFrom(t))
+                  {
+                     try
+                     {
+                        // In real life we would create the plugin instances and keep them until no longer necesary.
+                        IPlugin plugin = (IPlugin)Activator.CreateInstance(t);
+                        plugin.Execute(context);
+                     }
+                     catch (Exception ex)
+                     {
+                        Console.WriteLine($"Oh no {kv.Key} from {context.Owner} is bad !!");
+                        Console.WriteLine(ex.ToString());
+                     }
+                  }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
+         }
+         catch (Exception ex)
+         {
+            Console.WriteLine(ex.ToString());
+         }
+      }
 
-        private Dictionary<string, Assembly> LoadedPlugins;
+      private Dictionary<string, Assembly> LoadedPlugins;
 
-        static AppDomain CrateRestrtictedAppDomain()
-        {
-            PermissionSet permissionSet = new PermissionSet(PermissionState.None);
-            permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-            permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));
-            permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Infrastructure));
+      static AppDomain CrateRestrtictedAppDomain()
+      {
+         PermissionSet permissionSet = new PermissionSet(PermissionState.None);
+         permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+         permissionSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.RemotingConfiguration));
 
-            AppDomainSetup appDomainSetup = new AppDomainSetup
-            {
-                ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
-            };
+         AppDomainSetup appDomainSetup = new AppDomainSetup
+         {
+            ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
+         };
 
-            return AppDomain.CreateDomain("sandbox", null, appDomainSetup, permissionSet);
-        }
-    }
+         return AppDomain.CreateDomain("sandbox", null, appDomainSetup, permissionSet);
+      }
+   }
 }
